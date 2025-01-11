@@ -1,2 +1,2 @@
 # 2025
-Rivebots 2024-2025 Season
+Riverbots 2024-2025 Season
