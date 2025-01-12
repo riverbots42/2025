@@ -12,9 +12,17 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.motorcontrol.CANSparkMax;
 
-public class SwerveModule {
+/*
+  At the moment, we assume:
+  1. CANbus-based SparkMax controllers,
+  2. NEO-style integrated hall-effect encoders
+
+  Improvement to include the use of an absolute encoder for steering, but that's not today :-)
+*/
+
+public class RiverSwerveModule {
   private static final double kWheelRadius = 0.0508;
   private static final int kEncoderResolution = 4096;
 
@@ -22,8 +30,8 @@ public class SwerveModule {
   private static final double kModuleMaxAngularAcceleration =
       2 * Math.PI; // radians per second squared
 
-  private final PWMSparkMax m_driveMotor;
-  private final PWMSparkMax m_turningMotor;
+  private final CANSparkMax m_driveMotor;
+  private final CANSparkMax m_turningMotor;
 
   private final Encoder m_driveEncoder;
   private final Encoder m_turningEncoder;
@@ -45,27 +53,17 @@ public class SwerveModule {
   private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
 
   /**
-   * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
+   * Constructs a SwerveModule with a drive motor, turning motor using Hall Effect relative encoders on two Spark MAXes.
    *
-   * @param driveMotorChannel PWM output for the drive motor.
-   * @param turningMotorChannel PWM output for the turning motor.
-   * @param driveEncoderChannelA DIO input for the drive encoder channel A
-   * @param driveEncoderChannelB DIO input for the drive encoder channel B
-   * @param turningEncoderChannelA DIO input for the turning encoder channel A
-   * @param turningEncoderChannelB DIO input for the turning encoder channel B
+   * @param driveMotorID CANbus ID for the drive motor.
+   * @param turningMotorID CANbus ID for the turning motor.
    */
-  public SwerveModule(
-      int driveMotorChannel,
-      int turningMotorChannel,
-      int driveEncoderChannelA,
-      int driveEncoderChannelB,
-      int turningEncoderChannelA,
-      int turningEncoderChannelB) {
-    m_driveMotor = new PWMSparkMax(driveMotorChannel);
-    m_turningMotor = new PWMSparkMax(turningMotorChannel);
+  public SwerveModule( int driveMotorID, int turningMotorID ) {
+    m_driveMotor = new CANSparkMax(driveMotorID);
+    m_turningMotor = new CANSparkMax(turningMotorID);
 
-    m_driveEncoder = new Encoder(driveEncoderChannelA, driveEncoderChannelB);
-    m_turningEncoder = new Encoder(turningEncoderChannelA, turningEncoderChannelB);
+    m_driveEncoder = m_driveMotor.getEncoder();
+    m_turningEncoder = m_turningMotor.getEncoder();
 
     // Set the distance per pulse for the drive encoder. We can simply use the
     // distance traveled for one rotation of the wheel divided by the encoder
@@ -111,7 +109,7 @@ public class SwerveModule {
     var encoderRotation = new Rotation2d(m_turningEncoder.getDistance());
 
     // Optimize the reference state to avoid spinning further than 90 degrees
-    SwerveModuleState state = SwerveModuleState.optimize(desiredState, encoderRotation);
+    SwerveModuleState state = SwerveModuleState.optimize(desiredState, encoderRotation); //this says optimize is deprecated
 
     // Scale speed by cosine of angle error. This scales down movement perpendicular to the desired
     // direction of travel that can occur when modules change directions. This results in smoother

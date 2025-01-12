@@ -13,6 +13,16 @@ import edu.wpi.first.wpilibj.AnalogGyro;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
+  /* The various CANbus IDs for the motor controllers. */
+  private final int kFRONT_LEFT_DRIVE = 10;
+  private final int kFRONT_LEFT_STEER = 20;
+  private final int kFRONT_RIGHT_DRIVE = 12;
+  private final int kFRONT_RIGHT_STEER = 22;
+  private final int kREAR_LEFT_DRIVE = 11;
+  private final int kREAR_LEFT_STEER = 21;
+  private final int kREAR_RIGHT_DRIVE = 13;
+  private final int kREAR_RIGHT_STEER = 23;
+
   public static final double kMaxSpeed = 1.5; // 3 meters per second
   public static final double kMaxAngularSpeed = Math.PI; // 1/2 rotation per second
 
@@ -21,10 +31,10 @@ public class Drivetrain {
   private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
   private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
 
-  private final SwerveModule m_frontLeft = new SwerveModule(10, 20, 0, 1, 2, 3);
-  private final SwerveModule m_frontRight = new SwerveModule(12, 22, 4, 5, 6, 7);
-  private final SwerveModule m_backLeft = new SwerveModule(11, 12, 8, 9, 10, 11);
-  private final SwerveModule m_backRight = new SwerveModule(13, 23, 12, 13, 14, 15);
+  private final RiverSwerveModule m_frontLeft = new RiverSwerveModule(kFRONT_LEFT_DRIVE, kFRONT_LEFT_STEER);
+  private final RiverSwerveModule m_frontRight = new RiverSwerveModule(kFRONT_RIGHT_DRIVE, kFRONT_RIGHT_STEER);
+  private final RiverSwerveModule m_backLeft = new RiverSwerveModule(kREAR_LEFT_DRIVE, kREAR_LEFT_STEER);
+  private final RiverSwerveModule m_backRight = new RiverSwerveModule(kREAR_RIGHT_DRIVE, kREAR_RIGHT_STEER);
 
   private final AnalogGyro m_gyro = new AnalogGyro(0);
 
