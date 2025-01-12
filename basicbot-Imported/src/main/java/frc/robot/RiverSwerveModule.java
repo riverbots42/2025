@@ -58,7 +58,7 @@ public class RiverSwerveModule {
    * @param driveMotorID CANbus ID for the drive motor.
    * @param turningMotorID CANbus ID for the turning motor.
    */
-  public SwerveModule( int driveMotorID, int turningMotorID ) {
+  public RiverSwerveModule( int driveMotorID, int turningMotorID ) {
     m_driveMotor = new CANSparkMax(driveMotorID);
     m_turningMotor = new CANSparkMax(turningMotorID);
 
