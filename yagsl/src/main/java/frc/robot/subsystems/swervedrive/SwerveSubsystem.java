@@ -75,12 +75,13 @@ public class SwerveSubsystem extends SubsystemBase
    * PhotonVision class to keep an accurate odometry.
    */
   private       Vision              vision;
-
+ 
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
    *
    * @param directory Directory of swerve drive config files.
    */
+  
   public SwerveSubsystem(File directory)
   {
     // Angle conversion factor is 360 / (GEAR RATIO * ENCODER RESOLUTION)
@@ -96,7 +97,7 @@ public class SwerveSubsystem extends SubsystemBase
     System.out.println("\t\"angle\": {\"factor\": " + angleConversionFactor + " },");
     System.out.println("\t\"drive\": {\"factor\": " + driveConversionFactor + " }");
     System.out.println("}");
-
+    
     // Configure the Telemetry before creating the SwerveDrive to avoid unnecessary objects being created.
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try
@@ -307,7 +308,15 @@ public class SwerveSubsystem extends SubsystemBase
       }
     });
   }
-
+  public void fastSpeed()
+  {
+    swerveDrive.setMaximumAllowableSpeeds(Units.feetToMeters(12), Units.degreesToRadians(180));
+    
+  }
+  public void notAsFastSpeed()
+  {
+    swerveDrive.setMaximumAllowableSpeeds(Units.feetToMeters(3), Units.degreesToRadians(90));
+  }
   /**
    * Get the path follower with events.
    *
@@ -446,6 +455,7 @@ public class SwerveSubsystem extends SubsystemBase
    */
   public Command driveToDistanceCommand(double distanceInMeters, double speedInMetersPerSecond)
   {
+    
     return run(() -> drive(new ChassisSpeeds(speedInMetersPerSecond, 0, 0)))
         .until(() -> swerveDrive.getPose().getTranslation().getDistance(new Translation2d(0, 0)) >
                      distanceInMeters);
@@ -709,7 +719,7 @@ public class SwerveSubsystem extends SubsystemBase
   public ChassisSpeeds getTargetSpeeds(double xInput, double yInput, Rotation2d angle)
   {
     Translation2d scaledInputs = SwerveMath.cubeTranslation(new Translation2d(xInput, yInput));
-
+    System.out.println("inside GetTargeSpeeds " + Constants.MAX_SPEED);
     return swerveDrive.swerveController.getTargetSpeeds(scaledInputs.getX(),
                                                         scaledInputs.getY(),
                                                         angle.getRadians(),
