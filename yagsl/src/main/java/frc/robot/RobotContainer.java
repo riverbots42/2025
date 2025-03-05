@@ -4,7 +4,10 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.path.PathPlannerPath;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -14,11 +17,15 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.swervedrive.drivebase.AbsoluteDriveAdv;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
+import frc.robot.subsystems.swervedrive.Lift;
+import frc.robot.subsystems.swervedrive.Intake;
+import frc.robot.subsystems.swervedrive.Elevator;
 import java.io.File;
 import swervelib.SwerveInputStream;
 
@@ -35,6 +42,11 @@ public class RobotContainer
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem       drivebase  = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
                                                                                 "swerve/neo"));
+
+  private final Lift m_lift = new Lift();
+  private final Intake m_intake = new Intake();
+  private final Elevator m_elevator = new Elevator();
+
   // Applies deadbands and inverts controls because joysticks
   // are back-right positive while robot
   // controls are front-left positive
@@ -64,7 +76,7 @@ public class RobotContainer
                                                             .deadband(OperatorConstants.DEADBAND)
                                                             .scaleTranslation(0.8)
                                                             .allianceRelativeControl(true);
-
+ 
   /**
    * Clone's the angular velocity input stream and converts it to a fieldRelative input stream.
    */
@@ -121,6 +133,27 @@ public class RobotContainer
     DriverStation.silenceJoystickConnectionWarning(true);
     NamedCommands.registerCommand("test", Commands.print("I EXIST"));
   }
+  public Command getAutonomousCommand() {
+    // try{
+    //   PathPlannerPath path = PathPlannerPath.fromPathFile("Leave Auto.auto");
+    //   return AutoBuilder.followPath(path);
+    // } catch (Exception e) {
+    //   DriverStation.reportError("Big OOPS" + e.getMessage(), e.getStackTrace());
+    //   return Commands.none();
+    // }
+    System.out.println("auto started bruv");
+    try{
+      return drivebase.driveToDistanceCommand(5.0, 3.9);
+
+    }catch (Exception e) {
+      DriverStation.reportError("Big OOPS" + e.getMessage(), e.getStackTrace());
+      System.out.println(e.getMessage()); 
+      return Commands.none();
+    }
+    
+
+
+  }
 
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
@@ -153,17 +186,28 @@ public class RobotContainer
       driverXbox.rightBumper().onTrue(Commands.none());
     } else
     {
-      driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      driverXbox.x().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
-      driverXbox.b().whileTrue(
-          drivebase.driveToPose(
-              new Pose2d(new Translation2d(4, 4), Rotation2d.fromDegrees(0)))
-                              );
-      driverXbox.y().whileTrue(drivebase.aimAtSpeaker(2));
+      drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity); // Overrides drive command above!
+
+      //driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
+      //driverXbox.x().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
+      //driverXbox.x().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
+      driverXbox.a().onChange((Commands.runOnce(drivebase::notAsFastSpeed, drivebase)));
+
+      driverXbox.b().onChange((Commands.runOnce(drivebase::fastSpeed, drivebase)));
+      //driverXbox.y().onTrue((Commands.runOnce(m_lift:: incrementLowerLift, m_lift)));
       driverXbox.start().whileTrue(Commands.none());
       driverXbox.back().whileTrue(Commands.none());
-      driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-      driverXbox.rightBumper().onTrue(Commands.none());
+      //driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
+      //driverXbox.leftBumper().onTrue(Commands.runOnce(m_lift:: getEncoderPosition, m_lift));
+      driverXbox.rightTrigger().onTrue(Commands.runOnce(m_lift::raiseLift, m_lift));
+      driverXbox.leftTrigger().onTrue(Commands.runOnce(m_lift::lowerLift, m_lift));
+      driverXbox.rightBumper().whileTrue(Commands.runOnce(m_intake::intake, m_intake));
+      driverXbox.leftBumper().whileTrue(Commands.runOnce(m_intake::eject, m_intake));
+      driverXbox.x().whileTrue(Commands.runOnce(m_elevator::raiseElevator, m_elevator));
+      driverXbox.y().whileTrue(Commands.runOnce(m_elevator::lowerElevator, m_elevator));
+      
+
+      //TODO: check whether this "whileTrue" and "runOnce" business is corect
     }
 
   }
@@ -173,11 +217,7 @@ public class RobotContainer
    *
    * @return the command to run in autonomous
    */
-  public Command getAutonomousCommand()
-  {
-    // An example command will be run in autonomous
-    return drivebase.getAutonomousCommand("New Auto");
-  }
+
 
   public void setDriveMode()
   {
